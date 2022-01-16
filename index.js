@@ -74,11 +74,17 @@ startApplication = () => {
                 deleteChoices()
                 break;
 
-            // default:console.table();
-
         }
     });
 
+}
+
+function viewEmployees(){
+    connection.query("SELECT * FROM employee;", (err, res) => {
+        if(err) throw err
+        console.table(res);
+        startApplication();
+        })
 }
 
 function viewDepartments() {
@@ -153,14 +159,26 @@ function addEmployee() {
             message: "What is the employee's manager?",
             choices: addManager()
         }
-    ]).then(function(val) {
-        const roleId = viewRoles().indexOf(val.roles) + 1
-        const ManagerId =
+    ]).then(function(userChoice) {
+        const roleId = viewRoles().indexOf(userChoice.roles) + 1
+        const ManagerId = selectManager().indexOf(userChoice) + 1
+        connection.query('INSERT INTO employee SET ?',
+        {
+            first_name:userChoice.firstName,
+            last_name:userChoice.lastName,
+            manager_id:ManagerId,
+            role_id:roleId
+        },
+        function(err){
+            if(err) throw err
+            console.table(userChoice);
+            startApplication()
+        })
     })
 }
 
 function updateRole() {
-    connection.query("SELECT roles.title FROM roles JOIN department ON role_id = role.id;",
+    connection.query("SELECT roles.title FROM roles JOIN department ON role_id = roles.id;",
         function (err, res) {
             if (err) throw err
             console.log(res);
@@ -169,15 +187,35 @@ function updateRole() {
                     type: 'rawlist',
                     name: 'lastName',
                     choices: function () {
-                        var lastName = [];
+                        const lastName = [];
                         for (var i = 0; i < res.length; i++) {
                             lastName.push(res[i].last_name)
                         }
                         return lastName;
                     },
-                    message: "Which employee's role would you like to update?"
+                    message: "Which employee's role would you like to update?",
+                },
+                {
+                    name:"roles",
+                    type:"rawlist",
+                    message:"What is the employee new title?",
+                    choices: viewRoles()
+                },
+            ]).then(function(userChoice) {
+                const roleId = viewRoles().indexOf(userChoice.roles) + 1
+                connection.query('UPDATE employee SET WHERE ?',
+                {
+                    last_name:userChoice.lastName
+                },
+                {
+                    role_id:roleId
+                },
+                ),function(err){
+                    if(err) throw err
+                    console.table(userChoice);
+                    startApplication()
                 }
-            ])
+            })
         })
 }
 
