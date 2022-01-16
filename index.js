@@ -1,4 +1,5 @@
 
+const res = require('express/lib/response');
 const inquirer = require('inquirer')
 const mysql = require('mysql2')
 
@@ -38,7 +39,7 @@ startApplication = () => {
         console.log(response)
         let userChoice = response.options;
         console.log(userChoice)
-        switch( userChoice )  {
+        switch (userChoice) {
             case 'View all departments':
                 viewDepartments()
                 break;
@@ -60,9 +61,21 @@ startApplication = () => {
             case 'Update an employee role':
                 updateRole()
                 break;
+            case "Update employee manager":
+                updateManager()
+                break;
+            case 'View employee by manager':
+                viewEmployeeByManager()
+                break;
+            case 'View employees by department':
+                viewEmployeeByDepartment()
+                break;
+            case 'Delete departments, roles and employees':
+                deleteChoices()
+                break;
 
             // default:console.table();
-               
+
         }
     });
 
@@ -74,82 +87,9 @@ function viewDepartments() {
         console.table(res);
         startApplication();
     })
-    
-}
-
-function addRole() {
-    inquirer
-        .prompt([
-            {
-                type: "input",
-                name: "title",
-                message: "What is the name of the role to add?"
-            },
-            {
-                type: "input",
-                name: "salary",
-                message: "What is the salary for this position?"
-            },
-            {
-                type: "input",
-                name: "department",
-                message: "What is the department id for this role"
-            }
-        ]).then((answer) => {
-            connection.query(
-                "INSERT INTO role SET title = ?, salary = ?, department_id = ?",
-                [answer.title, answer.salary, answer.department],
-                (err, res) => {
-                    if (err) throw err
-                    console.table(res);
-                    startApplication()
-                }
-            )
-        })
-
 
 }
 
-
-function viewEmployees() {
-    connection.query("SELECT * FROM employee;",
-        (err, res) => {
-            if (err) throw err
-            console.table(res)
-            startApplication();
-        })
-        
-}
-
-function viewRoles() {
-    connection.query("SELECT * FROM roles", (err, res) => {
-        if (err) throw err
-        console.table(res);
-        startApplication();
-    });
-}
-
-
-function addDepartment() {
-    inquirer.prompt([
-        {
-            type: 'input',
-            name: 'department',
-            message: 'What department would you like to add?'
-        }
-    ]).then((userChoice) => {
-        connection.query(
-            "INSET INTO department SET name ?",
-            userChoice.department,
-            (err, res) => {
-                if(err) throw err
-                viewDepartments();
-                console.log("Added `department_name` to the database");
-                startApplication()
-            }   
-        )
-    })
-}
 function addRole() {
     connection.query("SELECT role.title AS Title, role.id AS Id, role.department AS Department, role.salary AS Salary FROM role", function (err, res) {
         inquirer.prompt([
@@ -173,19 +113,22 @@ function addRole() {
                 name: 'managerId',
                 message: "Enter the employee's manager id"
             }
-        ]).then((userChoice) => {
-            connection.query(
-                "INSERT INTO role SET role_id = ?, salary = ?, department_id = ?",
-                [userChoice.role_id, userChoice.salary, userChoice.department],
-                (err, res) => {
-                    if (err) throw err;
+        ]).then(function (res) {
+            connection.query("INSERT INTO roles SET ?", {
+                title: res.Title,
+                salary: res.Salary,
+            },
+                function (err) {
+                    if (err)
+                        throw err;
                     console.table(res);
-                    startApplication()
-                }
-            )
-        })
-    })
+                    startApplication();
+                });
+        });
+    });
 }
+
+
 function addEmployee() {
     inquirer.prompt([
         {
@@ -210,20 +153,9 @@ function addEmployee() {
             message: "What is the employee's manager?",
             choices: addManager()
         }
-    ]).then((userChoice) => {
-        connection.query(
-            "INSERT INTO employee SET ?",
-            {
-                first_name: userChoice.firstName,
-                last_name: userChoice.lastName,
-                role_id: userChoice.role,
-                manager_id: userChoice.managerId
-            },
-            (err, res) => {
-                if (err) throw err
-                startApplication()
-            }
-        )
+    ]).then(function(val) {
+        const roleId = viewRoles().indexOf(val.roles) + 1
+        const ManagerId =
     })
 }
 
