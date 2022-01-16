@@ -4,14 +4,15 @@ const mysql = require('mysql2')
 
 
 
-connection = mysql.createConnection({
+
+const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     port: 3306,
     password: 'Mon@M@rvin',
     database: 'employee_tracker',
 });
-connection.query((err) => {
+connection.connect((err) => {
     if (err) throw err
     startApplication();
 })
@@ -33,8 +34,11 @@ startApplication = () => {
                 'Update an employee role'
             ]
         }
-    ]).then(answer => {
-        switch (answer.chosen) {
+    ]).then(response => {
+        console.log(response)
+        let userChoice = response.options;
+        console.log(userChoice)
+        switch( userChoice )  {
             case 'View all departments':
                 viewDepartments()
                 break;
@@ -56,19 +60,21 @@ startApplication = () => {
             case 'Update an employee role':
                 updateRole()
                 break;
-            default:
+
+            // default:console.table();
+               
         }
     });
 
 }
 
 function viewDepartments() {
-    connection.query("SELECT * FROM department",
-        function (err, res) {
-            if (err) throw err
-            console.table(res);
-        })
-    startApplication()
+    connection.query("SELECT * FROM department", (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        startApplication();
+    })
+    
 }
 
 function addRole() {
@@ -106,21 +112,21 @@ function addRole() {
 
 
 function viewEmployees() {
-    connection.query("SELECT employee.first_name, employee.last_name, roles.title, roles.salary, department.department_name, CONCAT(e.first_name, ' ', e.last_name) AS Manager FROM employee INNER JOIN department on department.id = roles.department_id LEFT JOIN employee e on employee.manager_id = e.id;",
+    connection.query("SELECT * FROM employee;",
         (err, res) => {
             if (err) throw err
             console.table(res)
             startApplication();
         })
+        
 }
 
 function viewRoles() {
     connection.query("SELECT * FROM roles", (err, res) => {
         if (err) throw err
         console.table(res);
+        startApplication();
     });
-    startApplication();
-
 }
 
 
@@ -128,20 +134,19 @@ function addDepartment() {
     inquirer.prompt([
         {
             type: 'input',
-            name: 'departmentName',
+            name: 'department',
             message: 'What department would you like to add?'
         }
-    ]).then((answer) => {
+    ]).then((userChoice) => {
         connection.query(
-            "INSET INTO department SET name = ?",
-            answer.department,
+            "INSET INTO department SET name ?",
+            userChoice.department,
             (err, res) => {
-                if (err) throw err
-                viewDepartments()
-                console.log();
-
+                if(err) throw err
+                viewDepartments();
+                console.log("Added `department_name` to the database");
                 startApplication()
-            }
+            }   
         )
     })
 }
@@ -168,10 +173,10 @@ function addRole() {
                 name: 'managerId',
                 message: "Enter the employee's manager id"
             }
-        ]).then((answer) => {
+        ]).then((userChoice) => {
             connection.query(
-                "INSERT INTO role SET title = ?, salary = ?, department_id = ?",
-                [answer.title, answer.salary, answer.department],
+                "INSERT INTO role SET role_id = ?, salary = ?, department_id = ?",
+                [userChoice.role_id, userChoice.salary, userChoice.department],
                 (err, res) => {
                     if (err) throw err;
                     console.table(res);
@@ -205,14 +210,14 @@ function addEmployee() {
             message: "What is the employee's manager?",
             choices: addManager()
         }
-    ]).then((answer) => {
+    ]).then((userChoice) => {
         connection.query(
             "INSERT INTO employee SET ?",
             {
-                first_name: answer.firstName,
-                last_name: answer.lastName,
-                role_id: answer.role,
-                manager_id: answer.managerId
+                first_name: userChoice.firstName,
+                last_name: userChoice.lastName,
+                role_id: userChoice.role,
+                manager_id: userChoice.managerId
             },
             (err, res) => {
                 if (err) throw err
