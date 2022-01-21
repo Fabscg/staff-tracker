@@ -1,5 +1,5 @@
 
-const res = require('express/lib/response');
+// const res = require('express/lib/response');
 const inquirer = require('inquirer')
 const mysql = require('mysql2')
 
@@ -33,7 +33,8 @@ startApplication = () => {
                 'Add department',
                 'Add role',
                 'Add an employee',
-                'Update an employee role'
+                'Update an employee role',
+                'Delete Employee'
             ]
         }
     ]).then(response => {
@@ -63,10 +64,10 @@ startApplication = () => {
                 addEmployee()
                 break;
             case 'Update an employee role':
-                updateRole()
+                updateEmployeeRole()
                 break;
             case 'Delete departments, roles and employees':
-                deleteChoices()
+                deleteEmployee()
                 break;
 
         }
@@ -75,12 +76,10 @@ startApplication = () => {
 }
 
 function viewAll() {
-
+    connection.query("SELECT * FROM department FULL OUTER JOIN roles ON department ")
 }
 
-function updateRole() {
-    
-}
+
 
 function viewEmployees() {
     connection.query("SELECT * FROM employee;", (err, res) => {
@@ -181,3 +180,92 @@ function addEmployee() {
             );
         });
 }
+
+function updateEmployeeRole() {
+    connection.query("SELECT * FROM employee ORDER BY first_name", (err, res) => {
+        let employees = res.map((employee) => {
+            console.log(res);
+            return {
+                name: employee.first_name + ' ' + employee.last_name,
+                value: employee.id
+            }
+        })
+        connection.query("SELECT * FROM roles ORDER BY title", (err, res) => {
+            let roles = res.map((role) => {
+                return {
+                    name: role.title,
+                    value: role.id
+                }
+            })
+            inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'update_employee',
+                        message: 'Which employee would you like to undate?',
+                        choices: employees
+                    },
+                    {
+                        type: 'list',
+                        name: 'update_role',
+                        message: "What is your employee's new role?",
+                        choices: roles,
+                    }
+                ]).then((res) => {
+                    connection.query("UPDATE employees SET role_id = ? WHERE id = ?",
+                        [res.update_role, res.update_employee],
+                        (err, res) => {
+                            console.table(res);
+                            viewEmployees();
+                        })
+                })
+        })
+    })
+}
+
+function deleteEmployee() {
+    console.log("Deleting an employee");
+
+    var query =
+        `SELECT e.id, e.first_name, e.last_name
+        FROM employee e`
+
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+
+        const deleteEmployeeChoices = res.map(({ id, first_name, last_name }) => ({
+            value: id, name: `${id} ${first_name} ${last_name}`
+        }));
+
+        console.table(res);
+        console.log("ArrayToDelete!\n");
+
+        promptDelete(deleteEmployeeChoices);
+    });
+}
+
+function promptDelete(deleteEmployeeChoices) {
+
+    inquirer
+        .prompt([
+            {
+                type: "list",
+                name: "employeeId",
+                message: "Which employee do you want to remove?",
+                choices: deleteEmployeeChoices
+            }
+        ])
+        .then(function (res) {
+
+            var query = `DELETE FROM employee WHERE ?`;
+            connection.query(query, { id: res.employeeId }, function (err, res) {
+                if (err) throw err;
+
+                console.table(res);
+                console.log(res.affectedRows + "Deleted!\n");
+
+                startApplication();
+            });
+        });
+}
+
