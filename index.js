@@ -26,7 +26,6 @@ startApplication = () => {
             name: 'options',
             message: 'What would you like to do?',
             choices: [
-                'View all',
                 'View all departments',
                 'View all roles',
                 'View all employees',
@@ -34,7 +33,7 @@ startApplication = () => {
                 'Add role',
                 'Add an employee',
                 'Update an employee role',
-                'Delete Employee'
+                // 'Delete Employee'
             ]
         }
     ]).then(response => {
@@ -42,9 +41,6 @@ startApplication = () => {
         let userChoice = response.options;
         console.log(userChoice)
         switch (userChoice) {
-            case 'View all':
-                viewAll()
-                break;
             case 'View all departments':
                 viewDepartments()
                 break;
@@ -66,21 +62,14 @@ startApplication = () => {
             case 'Update an employee role':
                 updateEmployeeRole()
                 break;
-            case 'Delete departments, roles and employees':
-                deleteEmployee()
-                break;
+            // case 'Delete departments, roles and employees':
+            //     deleteEmployee()
+            //     break;
 
         }
     });
 
 }
-
-function viewAll() {
-    connection.query("SELECT * FROM department FULL OUTER JOIN roles ON department ")
-}
-
-
-
 function viewEmployees() {
     connection.query("SELECT * FROM employee;", (err, res) => {
         if (err) throw err
@@ -124,11 +113,31 @@ function addRole() {
             name: 'department_id',
             message: 'what is the deparment ID this role belong to?'
         }
+    ]).then((res) => {
+        connection.query("INSERT INTO roles SET ?",
+            {
+                title: res.title,
+                salary: res.salary,
+                department_id: res.department_id
+            },
+            (err, res) => {
+                if (err) throw err
+                console.table(res);
+                viewRoles();
+            });
+    });
+}
+function addDepartment() {
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'title',
+            message: 'What is the name of the department?'
+        },
     ]).then(function (res) {
-        connection.query("INSERT INTO roles SET ?", {
-            title: res.title,
-            salary: res.salary,
-            department_id: res.department_id
+        connection.query("INSERT INTO department SET ?", {
+            department_name: res.department_name,
+
         },
             function (err) {
                 if (err)
@@ -223,49 +232,9 @@ function updateEmployeeRole() {
     })
 }
 
-function deleteEmployee() {
-    console.log("Deleting an employee");
 
-    var query =
-        `SELECT e.id, e.first_name, e.last_name
-        FROM employee e`
 
-    connection.query(query, function (err, res) {
-        if (err) throw err;
 
-        const deleteEmployeeChoices = res.map(({ id, first_name, last_name }) => ({
-            value: id, name: `${id} ${first_name} ${last_name}`
-        }));
 
-        console.table(res);
-        console.log("ArrayToDelete!\n");
 
-        promptDelete(deleteEmployeeChoices);
-    });
-}
-
-function promptDelete(deleteEmployeeChoices) {
-
-    inquirer
-        .prompt([
-            {
-                type: "list",
-                name: "employeeId",
-                message: "Which employee do you want to remove?",
-                choices: deleteEmployeeChoices
-            }
-        ])
-        .then(function (res) {
-
-            var query = `DELETE FROM employee WHERE ?`;
-            connection.query(query, { id: res.employeeId }, function (err, res) {
-                if (err) throw err;
-
-                console.table(res);
-                console.log(res.affectedRows + "Deleted!\n");
-
-                startApplication();
-            });
-        });
-}
 

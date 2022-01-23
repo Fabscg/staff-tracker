@@ -26,7 +26,7 @@
      MySQL2, Inquirer, console.table
 
   # Usage
-  Use the command-line and use "node server.js" to start accepting the user input 
+  Use the command-line and use "node server.js" or "npm start" to start accepting the user input 
 
   # Credits
   none
@@ -49,5 +49,11 @@
   
 
   ## [Email](Fabskickass)
+
+  ##  ![Staff-Tracker/image](images/staff-tracker.png)
+
+  ## [Video Demo](https://drive.google.com/file/d/1B1oK9ertTc6fyjEyPkBCAq62WxR3EfGY/view)
+
+
 
   
